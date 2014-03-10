@@ -74,9 +74,13 @@ module Iquest
 
       def to_s
         if @search
-          render_table_with_search
+          content_tag :div, '', class: 'filter-table-block' do
+            render_table_with_search
+          end
         else
-          render_table_without_search
+          content_tag :div, '', class: 'filter-table-block' do
+            render_table_without_search
+          end
         end
       end
 
@@ -86,13 +90,15 @@ module Iquest
           render_table_header + render_table_body + render_table_footer
         end
 
-        if @options[:responsive]
+        out = if @options[:responsive]
           content_tag :div, class: 'table-responsive' do
             table
           end
         else
           table
         end
+
+        out + render_pagination + render_footer_actions
       end
 
       include RansackSimpleForm::FormHelper
@@ -255,20 +261,19 @@ module Iquest
       def render_table_footer
         content_tag :tfoot, class: '' do
           content_tag :tr, class: '' do
-            render_pagination + render_footer_actions
           end
         end
       end
 
       def render_pagination
-        content_tag :td, colspan: column_count do
+        content_tag :div, '', class: 'paginate-block' do
           paginate @collection if @collection.respond_to?(:current_page)
         end
 
       end
 
       def render_footer_actions
-        content_tag :td, '', class: 'totals-block' do
+        content_tag :div, '', class: 'totals-block' do
           page_entries_info @collection, entry_name: @klass.model_name.human if @collection.respond_to?(:current_page)
         end
       end

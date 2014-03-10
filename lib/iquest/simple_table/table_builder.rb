@@ -4,7 +4,7 @@ module Iquest
   module SimpleTable
     class TableBuilder
       attr_reader :parent, :table_id, :columns, :collection, :search_form, :actions, :new_link
-      delegate :capture, :content_tag, :link_to, :paginate, :params, to: :parent
+      delegate :capture, :content_tag, :link_to, :paginate, :page_entries_info, :params, to: :parent
       delegate :sort_link, :search_form_for, to: :parent
       delegate :polymorphic_path, :polymorphic_url, :new_polymorphic_path, :new_polymorphic_url, to: :parent
       delegate :l, :t, to: :parent
@@ -268,7 +268,9 @@ module Iquest
       end
 
       def render_footer_actions
-        content_tag(:td, '', class: '')
+        content_tag :td, '', class: '' do
+          page_entries_info @collection, entry_name: @klass.model_name.human if @collection.respond_to?(:current_page)
+        end
       end
 
       private

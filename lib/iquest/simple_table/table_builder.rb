@@ -268,7 +268,7 @@ module Iquest
       end
 
       def render_footer_actions
-        content_tag :td, '', class: '' do
+        content_tag :td, '', class: 'totals-block' do
           page_entries_info @collection, entry_name: @klass.model_name.human if @collection.respond_to?(:current_page)
         end
       end

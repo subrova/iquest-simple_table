@@ -127,7 +127,7 @@ module Iquest
 
       def render_new_link
         content_tag :th, class:'new-link' do
-          @new_link || (link_to t('new'), new_polymorphic_url(@klass), class: "btn btn-primary")
+          @new_link || (link_to t('simple_table.new', default: 'new'), new_polymorphic_url(@klass), class: "btn btn-primary")
         end
       end
 
@@ -158,8 +158,8 @@ module Iquest
       def render_buttons
         content_tag :th, class:'search-action' do
           out = content_tag :div, class:'btn-group' do
-            link_to("<i class=\"fa fa-times\" title=\"#{t('search.reset')}\"></i>".html_safe, '?' , class: 'search-reset btn btn-default') +
-            search_form.button( :submit, t('search.search'), class: 'search-button btn btn-default')
+            link_to(t('simple_table.reset', default: 'reset').html_safe, '?' , class: 'search-reset btn btn-default') +
+            search_form.button( :submit, t('simple_table.search', default: 'search').html_safe, class: 'search-button btn btn-default')
           end
           # FIXME change link_to url
         end

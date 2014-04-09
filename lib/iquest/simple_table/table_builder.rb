@@ -132,6 +132,7 @@ module Iquest
       end
 
       def render_search_inputs
+        return '' unless @search
         content_tag :tr, class:'filters' do
           rendered_columns = columns.map do |col, opts|
             render_column_search_inputs(col, opts)

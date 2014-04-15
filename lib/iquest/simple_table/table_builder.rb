@@ -18,12 +18,24 @@ module Iquest
         elsif collection_or_search.is_a? ActiveRecord::Relation
           @collection = collection_or_search
           @klass = @collection.klass
+        elsif collection_or_search.is_a?(Array) && (search = collection_or_search.detect {|o| o.is_a?(Ransack::Search)})
+          @search = search
+          @collection = search.result
+          @klass = @collection.klass
+          options[:search_url] ||= polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o})
+          options[:new_url] ||= new_polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o}) rescue NoMethodError
+        elsif collection_or_search.is_a?(Array) && (collection = collection_or_search.detect {|o| o.is_a?(ActiveRecord::Relation)}) 
+          @collection = collection
+          @klass = @collection.klass
+          options[:new_url] ||= new_polymorphic_path(collection_or_search.map {|o| o.is_a?(ActiveRecord::Relation)}) rescue NoMethodError
         else
           raise TypeError, 'ActiveRecord::Relation or Ransack::Search expected'
         end
         apply_pagination
         #draper
         @collection = @collection.decorate if @collection.respond_to?(:decorate)
+        options[:search_url] ||= polymorphic_path(@klass)
+        options[:new_url] ||= new_polymorphic_path(@klass) rescue NoMethodError
         @options = options
         @table_id = "table_#{self.object_id}".parameterize
         @columns = {}.with_indifferent_access
@@ -60,7 +72,8 @@ module Iquest
       end
 
       def new_link(*args, &block)
-        @new_link = block if block_given?
+        @new_link = args.first if args.first
+        @new_link = block.call if block_given?
       end
 
 
@@ -104,7 +117,7 @@ module Iquest
       include RansackSimpleForm::FormHelper
 
       def render_table_with_search
-        ransack_simple_form_for @search do |f|
+        ransack_simple_form_for @search, url: @options[:search_url] do |f|
           @search_form = f
           render_table_without_search
         end
@@ -127,7 +140,7 @@ module Iquest
 
       def render_new_link
         content_tag :th, class:'new-link' do
-          @new_link || (link_to t('simple_table.new', default: 'new'), new_polymorphic_url(@klass), class: "btn btn-primary")
+          @new_link || (link_to t('simple_table.new', default: 'new'), @options[:new_url], class: "btn btn-primary" if @options[:new_url])
         end
       end
 

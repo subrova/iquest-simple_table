@@ -15,7 +15,7 @@ module Iquest
           @collection = collection_or_search.result
           @search = collection_or_search
           @klass = @search.klass
-        elsif collection_or_search.is_a? ActiveRecord::Relation
+        elsif collection_or_search.is_a?(ActiveRecord::Relation) || collection_or_search.is_a?(ActiveRecord::AssociationRelation)
           @collection = collection_or_search
           @klass = @collection.klass
         elsif collection_or_search.is_a?(Array) && (search = collection_or_search.detect {|o| o.is_a?(Ransack::Search)})
@@ -24,12 +24,12 @@ module Iquest
           @klass = @collection.klass
           options[:search_url] ||= polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o})
           options[:new_url] ||= new_polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o}) rescue NoMethodError
-        elsif collection_or_search.is_a?(Array) && (collection = collection_or_search.detect {|o| o.is_a?(ActiveRecord::Relation)}) 
+        elsif collection_or_search.is_a?(Array) && (collection = collection_or_search.detect {|o| o.is_a?(ActiveRecord::Relation) || o.is_a?(ActiveRecord::AssociationRelation)}) 
           @collection = collection
           @klass = @collection.klass
-          options[:new_url] ||= new_polymorphic_path(collection_or_search.map {|o| o.is_a?(ActiveRecord::Relation)}) rescue NoMethodError
+          options[:new_url] ||= new_polymorphic_path(collection_or_search.map {|o| o.is_a?(ActiveRecord::Relation) || o.is_a?(ActiveRecord::AssociationRelation)}) rescue NoMethodError
         else
-          raise TypeError, 'ActiveRecord::Relation or Ransack::Search expected'
+          raise TypeError, 'ActiveRecord::Relation, ActiveRecord::AssociationRelation or Ransack::Search expected'
         end
         apply_pagination
         #draper
@@ -180,7 +180,7 @@ module Iquest
       end
 
       def render_table_body
-        content_tag :tbody do
+        content_tag :tbody, class: 'rowlink', data: {link: 'row', target: 'a.rowlink'} do
           collection.map do |item|
             render_table_row(item)
           end.join.html_safe
@@ -224,7 +224,7 @@ module Iquest
         obj = args.second
         value = get_value(attr, obj)
         formatter = options[:formatter]
-        content_tag :td do
+        content_tag :td, class: options[:class] do
           render_value(value, &formatter)
         end
       end
@@ -259,7 +259,7 @@ module Iquest
       end
 
       def render_actions(item)
-         content_tag :td do
+         content_tag :td, class: 'rowlink-skip' do
            @actions.map do |action|
              render_action(item, action)
            end.join.html_safe

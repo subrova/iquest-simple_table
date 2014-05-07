@@ -224,8 +224,11 @@ module Iquest
         obj = args.second
         value = get_value(attr, obj)
         formatter = options[:formatter]
-        content_tag :td, class: options[:class] do
-          render_value(value, &formatter)
+        cell_value = render_value(obj, value, &formatter)
+        cell_class = "rowlink-skip" if include_link?(cell_value)
+        cell_class = "#{cell_class} options[:class]"
+        content_tag :td, class: cell_class do
+          cell_value
         end
       end
 
@@ -237,10 +240,22 @@ module Iquest
         end
       end
 
+      def include_link?(string)
+        string.try(:include?, '<a')
+      end
+
       def render_value(*args, &block)
-        value = args.first
+        object = args.first
+        value = args.second
         if block_given?
-          block.call(value)
+          case block.arity
+          when 1
+            block.call(value)
+          when 2
+            block.call(object, value)
+          else
+            block.call
+          end
         else
           format_value(value)
         end

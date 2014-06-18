@@ -34,7 +34,7 @@ module Iquest
         apply_pagination
         #draper
         @collection = @collection.decorate if @collection.respond_to?(:decorate)
-        options[:search_url] ||= polymorphic_path(@klass)
+        options[:search_url] ||= polymorphic_path(@klass) rescue NoMethodError
         options[:new_url] ||= new_polymorphic_path(@klass) rescue NoMethodError
         @options = options
         @table_id = "table_#{self.object_id}".parameterize

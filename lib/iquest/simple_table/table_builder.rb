@@ -3,10 +3,10 @@ require 'ransack_simple_form'
 module Iquest
   module SimpleTable
     class TableBuilder
-      attr_reader :parent, :table_id, :columns, :collection, :search_form, :actions, :new_link
+      attr_reader :parent, :table_id, :columns, :collection, :search_form, :actions, :collection_actions
       delegate :capture, :content_tag, :link_to, :paginate, :page_entries_info, :params, to: :parent
       delegate :sort_link, :search_form_for, to: :parent
-      delegate :polymorphic_path, :polymorphic_url, :new_polymorphic_path, :new_polymorphic_url, to: :parent
+      delegate :polymorphic_path, :polymorphic_url, to: :parent
       delegate :l, :t, to: :parent
 
       def initialize(parent, collection_or_search, options = {})
@@ -22,37 +22,35 @@ module Iquest
           @search = search
           @collection = search.result
           @klass = @collection.klass
-          options[:search_url] ||= polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o})
-          options[:new_url] ||= new_polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o}) rescue NoMethodError
+          options[:search_url] ||= polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o})          
         elsif collection_or_search.is_a?(Array) && (collection = collection_or_search.detect {|o| o.is_a?(ActiveRecord::Relation) || o.is_a?(ActiveRecord::AssociationRelation)}) 
           @collection = collection
-          @klass = @collection.klass
-          options[:new_url] ||= new_polymorphic_path(collection_or_search.map {|o| o.is_a?(ActiveRecord::Relation) || o.is_a?(ActiveRecord::AssociationRelation)}) rescue NoMethodError
+          @klass = @collection.klass          
         else
           raise TypeError, 'ActiveRecord::Relation, ActiveRecord::AssociationRelation or Ransack::Search expected'
         end
         apply_pagination
         #draper
         @collection = @collection.decorate if @collection.respond_to?(:decorate)
-        options[:search_url] ||= polymorphic_path(@klass) rescue NoMethodError
-        options[:new_url] ||= new_polymorphic_path(@klass) rescue NoMethodError
+        options[:search_url] ||= polymorphic_path(@klass) rescue NoMethodError        
         @options = options
         @table_id = "table_#{self.object_id}".parameterize
         @columns = {}.with_indifferent_access
         @actions = []
+        @collection_actions = []
         @search_input_default_options = {label: false, placeholder: false}.with_indifferent_access
       end
 
       def column(*args, &block)
         attr = args.first
         options = args.extract_options!
-        search = options.delete(:search)
+        search = options.delete(:search)                
         @columns[attr] = options
         if @search
           @columns[attr][:label] ||= Ransack::Translate.attribute(attr.to_s.tr('.','_'), context: @search.context)
         else
           @columns[attr][:label] ||= @klass.human_attribute_name(attr)
-        end
+        end        
         #iniciaizce search options
         if search.is_a?(Symbol) || search.is_a?(String)
           @columns[attr][:search] = {search.to_sym => {}}
@@ -62,6 +60,7 @@ module Iquest
           @columns[attr][:search] = search
         end
         @columns[attr][:formatter] ||= block if block_given?
+        @columns[attr][:sort] ||= attr.to_s.tr('.','_') #sort link attr
       end
 
       def action(*args, &block)
@@ -71,11 +70,18 @@ module Iquest
         @actions << options
       end
 
-      def new_link(*args, &block)
-        @new_link = args.first if args.first
-        @new_link = block.call if block_given?
+      def collection_action(*args, &block)
+        action = args.first
+        if action.is_a? String
+          @collection_actions << action
+        elsif block_given?
+          @collection_actions << block.call
+        end        
       end
 
+      def new_link(*args, &block)
+        ActiveSupport::Deprecation.warn("Iquest::SimpleTable#new_link does nothing. Use collection_action")
+      end
 
       def search_link(*args, &block)
         @search_button = block if block_given?
@@ -134,13 +140,13 @@ module Iquest
           rendered_columns = columns.map do |col, opts|
             render_column_label(col)
           end.join.html_safe
-          render_new_link + rendered_columns
+          render_collection_actions + rendered_columns
         end
       end
 
-      def render_new_link
-        content_tag :th, class:'new-link' do
-          @new_link || (link_to t('simple_table.new', default: 'new'), @options[:new_url], class: "btn btn-primary" if @options[:new_url])
+      def render_collection_actions
+        content_tag :th, class:'collection-actions' do
+          @collection_actions.join.html_safe
         end
       end
 
@@ -208,10 +214,10 @@ module Iquest
       def render_label(column)
         attr = column
         options = @columns[attr]
-
         label = options[:label] || attr.to_s
-        if @search
-          sort_link(@search, attr, label, method: search_action)
+        sort = options[:sort]
+        if @search && sort
+          sort_link(@search, sort, label, method: search_action)
         else
           label
         end

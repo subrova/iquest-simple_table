@@ -7,7 +7,7 @@ module Iquest
       delegate :capture, :content_tag, :link_to, :paginate, :page_entries_info, :params, to: :parent
       delegate :sort_link, :search_form_for, to: :parent
       delegate :polymorphic_path, :polymorphic_url, to: :parent
-      delegate :l, :t, to: :parent
+      delegate :l, :t, :dom_id, to: :parent
 
       def initialize(parent, collection_or_search, options = {})
         @parent = parent
@@ -34,7 +34,7 @@ module Iquest
         @collection = @collection.decorate if @collection.respond_to?(:decorate)
         options[:search_url] ||= polymorphic_path(@klass) rescue NoMethodError        
         @options = options
-        @table_id = "table_#{self.object_id}".parameterize
+        @table_id = "table_#{@klass}".pluralize.parameterize
         @columns = {}.with_indifferent_access
         @actions = []
         @collection_actions = []
@@ -104,8 +104,8 @@ module Iquest
       end
 
       private
-      def render_table_without_search
-        table = content_tag :table, class: @options[:html][:class] << %w(table table-hover table-striped) do
+      def render_table_without_search        
+        table = content_tag :table, id: @table_id, class: @options[:html][:class] << %w(table table-hover table-striped) do
           render_table_header + render_table_body + render_table_footer
         end
 
@@ -194,7 +194,8 @@ module Iquest
       end
 
       def render_table_row(item)
-        content_tag :tr do
+        row_id = "row_#{dom_id(item)}" rescue nil
+        content_tag :tr, id: row_id do
           rendered_columns = columns.map do |col|
             render_value_cell(col, item)
           end.join.html_safe
@@ -231,9 +232,10 @@ module Iquest
         value = get_value(attr, obj)
         formatter = options[:formatter]
         cell_value = render_value(obj, value, &formatter)
-        cell_class = "rowlink-skip" if include_link?(cell_value)
-        cell_class = "#{cell_class} options[:class]"
-        content_tag :td, class: cell_class do
+        cell_classes = []
+        cell_classes << "rowlink-skip" if include_link?(cell_value)
+        cell_classes << "#{options[:class]}"
+        content_tag :td, class: cell_classes.join(' ') do
           cell_value
         end
       end

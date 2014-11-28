@@ -171,7 +171,7 @@ module Iquest
       end
 
       def render_search_input(search, options = {})
-        input_options = @search_input_default_options.merge(options)
+        input_options = @search_input_default_options.merge(options).symbolize_keys
         search_form.input search.dup, input_options
       end
 

@@ -60,7 +60,7 @@ module Iquest
           @columns[attr][:search] = search
         end
         @columns[attr][:formatter] ||= block if block_given?
-        @columns[attr][:sort] ||= attr.to_s.tr('.','_') #sort link attr
+        @columns[attr][:sort] ||= attr.to_s.tr('.','_') unless @columns[attr][:sort] == false #sort link attr
       end
 
       def action(*args, &block)

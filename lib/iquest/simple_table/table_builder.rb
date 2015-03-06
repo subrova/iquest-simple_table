@@ -161,7 +161,7 @@ module Iquest
       end
 
       def render_column_search_inputs(column, options)
-        content_tag :th, class: '' do
+        content_tag :th, class: options[:class], data: options[:data] do
           if options[:search]
             options[:search].map do |search, options|
               render_search_input(search, options)
@@ -205,9 +205,9 @@ module Iquest
 
 
       def render_column_label(column)
-        options = @columns[:column]
+        options = @columns[column]
 
-        content_tag :th do
+        content_tag :th, class: options[:class], data: options[:data] do
           render_label(column)
         end
       end

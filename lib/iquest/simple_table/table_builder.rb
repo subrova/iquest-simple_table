@@ -25,9 +25,12 @@ module Iquest
           options[:search_url] ||= polymorphic_path(collection_or_search.map {|o| o.is_a?(Ransack::Search) ? o.klass : o})          
         elsif collection_or_search.is_a?(Array) && (collection = collection_or_search.detect {|o| o.is_a?(ActiveRecord::Relation) || o.is_a?(ActiveRecord::AssociationRelation)}) 
           @collection = collection
-          @klass = @collection.klass          
-        else
-          raise TypeError, 'ActiveRecord::Relation, ActiveRecord::AssociationRelation or Ransack::Search expected'
+          @klass = @collection.klass
+        elsif collection_or_search.is_a?(Array) && (collection_or_search.any? || options[:class])
+          @collection = collection_or_search
+          @klass = options[:class] || collection_or_search.first.class
+        else  
+          raise TypeError, 'ActiveRecord::Relation, ActiveRecord::AssociationRelation, Ransack::Search or Array of ActiveModel like objects expected'
         end
         apply_pagination
         #draper
@@ -46,11 +49,7 @@ module Iquest
         options = args.extract_options!
         search = options.delete(:search)                
         @columns[attr] = options
-        if @search
-          @columns[attr][:label] ||= Ransack::Translate.attribute(attr.to_s.tr('.','_'), context: @search.context)
-        else
-          @columns[attr][:label] ||= @klass.human_attribute_name(attr)
-        end        
+        @columns[attr][:label] ||= column_label(attr)
         #iniciaizce search options
         if search.is_a?(Symbol) || search.is_a?(String)
           @columns[attr][:search] = {search.to_sym => {}}
@@ -61,6 +60,7 @@ module Iquest
         end
         @columns[attr][:formatter] ||= block if block_given?
         @columns[attr][:sort] ||= attr.to_s.tr('.','_') unless @columns[attr][:sort] == false #sort link attr
+        @columns[attr][:html] ||= {}
       end
 
       def action(*args, &block)
@@ -213,12 +213,21 @@ module Iquest
       end
 
       def render_label(column)
-        attr = column
+        attr = column        
         options = @columns[attr]
         label = options[:label] || attr.to_s
-        sort = options[:sort]
+        sort = options[:sort]        
         if @search && sort
-          sort_link(@search, sort, label, method: search_action)
+          sort_attr = attr
+          sort_options = {}          
+          if sort.is_a?(Hash)
+            sort_attr = sort.keys.first
+            sort_options = sort[sort_attr]
+          elsif sort.is_a?(Symbol) || sort.is_a?(String)
+            sort_attr = sort
+          end
+          sort_options.reverse_merge!(method: search_action)
+          sort_link(@search, sort_attr, label, sort_options)
         else
           label
         end
@@ -234,9 +243,9 @@ module Iquest
         cell_value = render_value(obj, value, &formatter)
         cell_classes = []
         cell_classes << "rowlink-skip" if include_link?(cell_value)
-        cell_classes << "#{options[:class]}"
-        content_tag :td, class: cell_classes.join(' ') do
-          cell_value
+        cell_classes << "#{options[:html][:class]}"
+        content_tag :td, class: cell_classes do
+          "#{cell_value}".html_safe
         end
       end
 
@@ -323,6 +332,20 @@ module Iquest
       def column_value(col, obj)
         col.to_s.split('.').inject(obj, :try)
       end
+
+      def column_label(attr)        
+        if attr_class(attr).respond_to?(:human_attribute_name)
+          attr_class(attr).try(:human_attribute_name, attr)
+        elsif @search
+           Ransack::Translate.attribute(attr.to_s.tr('.','_'), context: @search.context)                  
+        else
+          attr.to_s.humanize
+        end  
+      end  
+
+      def attr_class(attr)
+        attr.to_s.split('.')[0..-2].inject(@klass) {|klass, assoc| klass.try(:reflect_on_association, assoc).try(:klass)}        
+      end  
 
       def column_count
         @columns.count

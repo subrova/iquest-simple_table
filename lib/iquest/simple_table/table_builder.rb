@@ -227,9 +227,10 @@ module Iquest
             sort_attr = sort
           end
           sort_options.reverse_merge!(method: search_action)
-          sort_link(@search, sort_attr, label, sort_options)
+          sort_link(@search, sort_attr, label, sort_options) << description(attr)
         else
-          label
+          label << description(attr)
+          label.html_safe
         end
       end
 
@@ -337,11 +338,22 @@ module Iquest
         if attr_class(attr).respond_to?(:human_attribute_name)
           attr_class(attr).try(:human_attribute_name, attr)
         elsif @search
-           Ransack::Translate.attribute(attr.to_s.tr('.','_'), context: @search.context)                  
+          Ransack::Translate.attribute(attr.to_s.tr('.','_'), context: @search.context)                  
         else
           attr.to_s.humanize
-        end  
+        end
       end  
+
+      def description(attr)
+        if attr_class(attr).respond_to?(:human_attribute_description)
+          description = attr_class(attr).try(:human_attribute_description, attr)
+        end
+        if description.present?
+          "<div class=\"description\">#{description}</div>".html_safe
+        else
+          "".html_safe
+        end
+      end
 
       def attr_class(attr)
         attr.to_s.split('.')[0..-2].inject(@klass) {|klass, assoc| klass.try(:reflect_on_association, assoc).try(:klass)}        

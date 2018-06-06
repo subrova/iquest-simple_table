@@ -1,12 +1,11 @@
 module Iquest
   module SimpleTable
     module AttributeDescription
-
       def human_attribute_description(attribute, options = {})
         parts     = attribute.to_s.split(".")
         attribute = parts.pop
         namespace = parts.join("/") unless parts.empty?
-        attributes_scope = "#{self.i18n_scope}.descriptions"
+        attributes_scope = "#{i18n_scope}.descriptions"
 
         if namespace
           defaults = lookup_ancestors.map do |klass|
@@ -24,7 +23,6 @@ module Iquest
         options[:default] = ''
         I18n.translate(defaults.shift, options)
       end
-
     end
   end
 end

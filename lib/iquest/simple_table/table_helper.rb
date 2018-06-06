@@ -1,7 +1,7 @@
 module Iquest
   module SimpleTable
     module TableHelper
-      def simple_table_for(*args, &block)
+      def simple_table_for(*args)
         collection = args.first
         opts = args.extract_options!
 

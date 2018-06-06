@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Iquest::SimpleTable::VERSION
   spec.authors       = ["Pavel Dusanek"]
   spec.email         = ["dusanek@iquest.cz"]
-  spec.description   = %q{Simple table helper}
-  spec.summary       = %q{Simple table helper, taht supports filtering through Ransack}
+  spec.description   = "Simple table helper"
+  spec.summary       = "Simple table helper, taht supports filtering through Ransack"
   spec.homepage      = "https://github.com/iquest/iquest-simple_table"
   spec.license       = "MIT"
 
@@ -21,4 +21,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'ransack_simple_form', '>= 0.1.0'
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "relaxed-rubocop"
 end

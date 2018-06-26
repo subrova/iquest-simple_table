@@ -2,9 +2,14 @@
 <table>
   <% table.each do |row| %>
   <tr>
-    <% row.each do |value| %>
-    <td><%= value %></td>
-    <% end %>
+    <td><%= row.a %></td>
+    <td><%= row.b %></td>
+    <td><%= row.c %></td>
+    <td><%= row.d %></td>
+    <td><%= row.e %></td>
+    <td><%= row.f %></td>
+    <td><%= l(row.g) %></td>
+    <td><%= l(row.h) %></td>
   </tr>
   <% end %>
 </table>

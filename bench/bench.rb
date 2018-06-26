@@ -8,6 +8,23 @@ rescue LoadError => e
   raise e
 end
 
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: bench.rb [options]"
+
+  opts.on("-m", "--[no-]mem", "Memory profile") do |v|
+    options[:mem] = v
+  end
+  opts.on("-b", "--[no-]bench", "Benchmark IPS") do |v|
+    options[:bench] = v
+  end
+  opts.on("-t", "--[no-]time", "Method timing") do |v|
+    options[:time] = v
+  end
+end.parse!
+
 gemfile(true) do
   source 'https://rubygems.org'
 
@@ -21,11 +38,10 @@ gemfile(true) do
   gem 'memory_profiler'
   gem 'ransack', '1.8.8', require: false
   gem 'iquest-simple_table', path: '../', require: false
+  gem 'timeasure'
 end
 
-require 'active_record'
-require 'rack/test'
-require 'action_controller/railtie'
+require 'rails/all'
 
 class BenchApp < Rails::Application
   config.root = __dir__
@@ -72,20 +88,49 @@ def memory_profile(title)
   report.pretty_print
 end
 
-collection = Array.new(100) { Foo.new(a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7) }
+today = Date.today
+now = Time.now
+collection = Array.new(100) { Foo.new(a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: today, h: now) }
 table = Kaminari.paginate_array(collection).page(1).per(100)
 
-memory_profile 'table' do
-  render 'table', table: table
+if options[:mem]
+  memory_profile 'table' do
+    render 'table', table: table
+  end
+
+  memory_profile 'simple_table' do
+    render 'simple_table', table: table
+  end
 end
 
-memory_profile 'simple_table' do
+if options[:bench]
+  Benchmark.ips do |x|
+    x.report('table') { render 'table', table: table }
+    x.report('simple_table') { render 'simple_table', table: table }
+
+    x.compare!
+  end
+end
+
+if options[:time]
+  require 'timeasure'
+
+  module Iquest
+    module SimpleTable
+      class TableBuilder
+        include Timeasure
+        tracked_instance_methods :to_s
+        tracked_private_instance_methods :render_table_row, :attr_class
+      end
+    end
+  end
+
+  require 'pp'
+
+  Timeasure::Profiling::Manager.prepare
   render 'simple_table', table: table
-end
-
-Benchmark.ips do |x|
-  x.report('table') { render 'table', table: table }
-  x.report('simple_table') { render 'simple_table', table: table }
-
-  x.compare!
+  report = Timeasure::Profiling::Manager.export
+  report.each do |item|
+    pp item
+  end
 end

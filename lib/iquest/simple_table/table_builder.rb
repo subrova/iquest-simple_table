@@ -112,9 +112,7 @@ module Iquest
       end
 
       WRAPPER_TEMPLATE = '<div class="filter-table-block">
-      <% if  @options[:responsive] %><div class="table-responsive"><%end%>
       <%= content %>
-      <% if  @options[:responsive] %></div><%end%>
       <div class"paginate-block"><%= paginate @collection if @collection.respond_to?(:current_page) %></div>
       <div class="totals-block"><%= page_entries_info @collection, entry_name: @klass.model_name.human if @collection.respond_to?(:current_page) %></div>
       </div>'.freeze
@@ -128,6 +126,7 @@ module Iquest
       private
 
       TABLE_TEMPLATE = '
+      <% if  @options[:responsive] %><div class="table-responsive"><%end%>
       <table id="<%= @table_id %>" class="<%= @options[:html][:class].join(CLASS_DELIMITER) %> table table-hover table-striped">
       <thead>
       <tr class="labels">
@@ -149,6 +148,7 @@ module Iquest
       </tbody>
       <tfoot class=""><tr class=""></tr></tfoot>
       </table>
+      <% if  @options[:responsive] %></div><%end%>
       '.freeze
       TABLE_ERB = ERB.new(TABLE_TEMPLATE)
       include RansackSimpleForm::FormHelper

@@ -113,7 +113,7 @@ module Iquest
 
       WRAPPER_TEMPLATE = '<div class="filter-table-block">
       <%= content %>
-      <div class"paginate-block"><%= paginate @collection if @collection.respond_to?(:current_page) %></div>
+      <div class="paginate-block"><%= paginate @collection if @collection.respond_to?(:current_page) %></div>
       <div class="totals-block"><%= page_entries_info @collection, entry_name: @klass.model_name.human if @collection.respond_to?(:current_page) %></div>
       </div>'.freeze
       WRAPPER_ERB = ERB.new(WRAPPER_TEMPLATE)

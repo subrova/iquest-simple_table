@@ -128,7 +128,7 @@ module Iquest
       TABLE_TEMPLATE = '
       <% if  @options[:responsive] %><div class="table-responsive"><%end%>
       <table id="<%= @table_id %>" class="<%= @options[:html][:class].join(CLASS_DELIMITER) %> table table-hover table-striped">
-      <thead>
+      <thead class="header">
       <tr class="labels">
       <th class="collection-actions"><%= @collection_actions.join %></th>
       <% columns.each do |attr, options| %>

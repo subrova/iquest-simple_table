@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency 'ransack_simple_form', '>= 0.1.0'
+  spec.add_runtime_dependency 'ransack_simple_form', github: 'subrova/ransack_simple_form'
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "relaxed-rubocop"
